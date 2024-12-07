@@ -303,8 +303,7 @@ def solve_puzzle(filename, param=None, verbose=False):
     lines = [line.strip('\n') for line in open(filename, 'r').readlines()]
     # groups = [[line.strip() for line in group.split('\n')] for group in open(filename, 'r').read().split('\n\n')]
 
-    p1 = 0
-    p2 = 0
+    p1, p2 = 0, 0
 
     # inp = [int(x) for x in lines[0]]
     # inp = [int(x) for x in lines[0].split(',')]

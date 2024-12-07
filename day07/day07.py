@@ -10,37 +10,39 @@ def solve_puzzle(filename, param=None, verbose=False):
     lines = [line.strip('\n') for line in open(filename, 'r').readlines()]
 
     p1, p2 = 0, 0
-    for y, line in enumerate(lines):
-        nl = nums(line)
-        safe = is_safe(nl)
-        if safe:
-            p1 += 1
-            p2 += 1
-        else:
-            for i in range(len(nl)):
-                ne = nl[:i] + nl[i + 1:]
-                if is_safe(ne):
-                    p2 += 1
-                    break
+
+    for idx, line in enumerate(lines):
+        nums_in_line = nums(line)
+        result = nums_in_line[0]
+        numbers = nums_in_line[1:]
+        if does_match(result, numbers, '+*', 0):
+            p1 += result
+        if does_match(result, numbers, '+*|', 0):
+            p2 += result
 
     return p1, p2
 
 
-def is_safe(e):
-    all_inc = True
-    all_dec = True
+def does_match(result, numbers, operators, value):
+    if len(numbers) == 0:
+        return result == value
 
-    prev = e[0]
-    for n in e[1:]:
-        diff_inc = prev - n
-        diff_dec = n - prev
-        if diff_inc < 1 or diff_inc > 3:
-            all_inc = False
-        if diff_dec < 1 or diff_dec > 3:
-            all_dec = False
-        prev = n
+    ans = False
+    next_v = numbers[0]
+    for op in operators:
+        if op == '+':
+            new_v = value + next_v
+        elif op == '*':
+            new_v = value * next_v
+        else:
+            assert op == '|'
+            new_v = int(str(value) + str(next_v))
 
-    return all_inc or all_dec
+        if does_match(result, numbers[1:], operators, new_v):
+            ans = True
+            break
+
+    return ans
 
 
 def main():
