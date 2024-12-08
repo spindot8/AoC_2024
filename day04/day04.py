@@ -1,60 +1,6 @@
 import time
 
 
-# Transpose the grid that rows get columns and columns get rows.
-#          16A
-# 12345    27B
-# 67890 -> 38C
-# ABCDE    49D
-#          50E
-def transpose_rows_to_columns(grid):
-    return list(map(list, zip(*grid)))
-
-
-# Rotate the grid 90 degree clockwise.
-#          A61
-# 12345    B72
-# 67890 -> C83
-# ABCDE    D94
-#          E05
-def rotate_90_degree_clockwise(grid):
-    return [row[::-1] for row in transpose_rows_to_columns(grid)]
-
-
-# Rotate the grid 90 degree counterclockwise.
-#          50E
-# 12345    49D
-# 67890 -> 38C
-# ABCDE    27B
-#          16A
-def rotate_90_degree_counterclockwise(grid):
-    return transpose_rows_to_columns(grid)[::-1]
-
-
-# Rotate the grid 180 degree.
-# 12345    EDCBA
-# 67890 -> 09876
-# ABCDE    54321
-def rotate_180_degree(grid):
-    return [row[::-1] for row in grid][::-1]
-
-
-# Flip the grid vertical.
-# 12345    ABCDE
-# 67890 -> 67890
-# ABCDE    12345
-def flip_vertical(grid):
-    return [row for row in grid][::-1]
-
-
-# Flip the grid horizontal.
-# 12345    54321
-# 67890 -> 09876
-# ABCDE    EDCBA
-def flip_horizontal(grid):
-    return [row[::-1] for row in grid]
-
-
 def find_horizontal(inp, h, w, to_find_word):
     to_find_list = [to_find_word, to_find_word[::-1]]
 
