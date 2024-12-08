@@ -9,6 +9,7 @@ from random import shuffle
 from copy import deepcopy
 # import networkx as netx
 # import sympy
+import pyperclip
 import heapq
 import functools
 from functools import cmp_to_key
@@ -59,6 +60,12 @@ dxyz = [(0, 0, 1), (0, 0, -1), (0, 1, 0), (0, -1, 0), (1, 0, 0), (-1, 0, 0)]
 alpha_lower = 'abcdefghijklmnopqrstuvwxyz'
 alpha_upper = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 alpha_lower_upper = alpha_lower + alpha_upper
+
+
+# print the supplied value and paste it to the clipboard
+def printc(value):
+    print(value)
+    pyperclip.copy(value)
 
 
 # Paint the supplied - horizontal or vertical - lines into the supplied grid.
@@ -350,8 +357,11 @@ def main():
             start = time.time()
             p1, p2 = solve_puzzle('data/' + filename, param, verbose)
             end = time.time()
-            print(p1)
-            print(p2)
+            printc(p1)
+            if p2:
+                printc(p2)
+            else:
+                print(p2)
             print("%s \tin %d ms" % (description, round(1000 * (end - start), 2)))
 
 

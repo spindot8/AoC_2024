@@ -1,6 +1,12 @@
 import time
 from collections import *
 from copy import deepcopy
+import pyperclip
+
+
+def printc(value):
+    print(value)
+    pyperclip.copy(value)
 
 
 def solve_puzzle(filename, param=None, verbose=False):
@@ -17,11 +23,9 @@ def solve_puzzle(filename, param=None, verbose=False):
     grid_p2 = deepcopy(grid_p1)
     anti_nodes_p1 = set()
     anti_nodes_p2 = set()
-    for k, v in antennas.items():
+    for _, v in antennas.items():
         for i in range(len(v)):
-            for j in range(len(v)):
-                if i == j:
-                    continue
+            for j in range(i + 1, len(v)):
                 x1, y1 = v[i]
                 x2, y2 = v[j]
                 determine_anti_nodes(grid_p1, anti_nodes_p1, x1, y1, x2, y2, True)
@@ -74,8 +78,11 @@ def main():
             start = time.time()
             p1, p2 = solve_puzzle('data/' + filename, param, verbose)
             end = time.time()
-            print(p1)
-            print(p2)
+            printc(p1)
+            if p2:
+                printc(p2)
+            else:
+                print(p2)
             print("%s \tin %d ms" % (description, round(1000 * (end - start), 2)))
 
 
