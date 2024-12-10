@@ -1,7 +1,6 @@
 import time
 from copy import deepcopy
 import pyperclip
-import heapq
 
 
 #       NORTH    EAST    SOUTH   WEST
@@ -13,40 +12,6 @@ dxy = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 def printc(value):
     print(value)
     pyperclip.copy(value)
-
-
-# Determine all shortest distances within the grid from start position
-# until either target position is reached or all reachable grid elements
-# are processed. Grid elements which are walls ('#' by default) are not
-# considered as being reachable.
-# The result is a path grid (dict) which contains for every position from
-# the original grid (or just until the target position was processed) the
-# shortest distance to the start_pos and the x and y coordinate of each
-# predecessor within the grid.
-def determine_grid_path(start_pos, grid, target=None, wall='#'):
-    grid_path = {}
-
-    cx, cy = start_pos
-    visited = set()
-    to_visit = []
-    heapq.heappush(to_visit, (0, cx, cy, cx, cy))
-    while len(to_visit) > 0:
-        dist, cx, cy, px, py = heapq.heappop(to_visit)
-        pos = (cx, cy)
-        if pos in visited:
-            continue
-        visited.add(pos)
-        cv = grid[(cx, cy)]
-        grid_path[pos] = (dist, px, py, cv)
-        if target and pos == target:
-            break
-        for dx, dy in dxy:
-            nx, ny = cx + dx, cy + dy
-            next_grid_entry = grid.get((nx, ny))
-            if next_grid_entry is not None and (nx, ny) not in visited:
-                if cv + 1 == next_grid_entry:
-                    heapq.heappush(to_visit, (dist + 1, nx, ny, cx, cy))
-    return grid_path
 
 
 def solve_puzzle(filename, param=None, verbose=False):
@@ -63,24 +28,20 @@ def solve_puzzle(filename, param=None, verbose=False):
             if v == 0:
                 starts.append((x, y))
 
-    for start in starts:
-        grid_path = determine_grid_path(start, grid)
-        for k, v in grid_path.items():
-            (dist, px, py, n) = v
-            if n == 9:
-                p1 += 1
-
     for (sx, sy) in starts:
-        paths = find_paths(grid, sx, sy, [])
+        peaks = set()
+        paths = find_paths(grid, sx, sy, [], peaks)
+        p1 += len(peaks)
         p2 += len(paths)
 
     return p1, p2
 
 
-def find_paths(grid, cx, cy, path):
+def find_paths(grid, cx, cy, path, peaks):
     cv = grid[(cx, cy)]
     path.append((cx, cy, cv))
     if cv == 9:
+        peaks.add((cx, cy))
         return [path]
 
     paths = []
@@ -88,8 +49,8 @@ def find_paths(grid, cx, cy, path):
         nx, ny = cx + dx, cy + dy
         if (nx, ny) in grid:
             nv = grid[(nx, ny)]
-            if cv+1 == nv:
-                paths.extend(find_paths(grid, nx, ny, deepcopy(path)))
+            if cv + 1 == nv:
+                paths.extend(find_paths(grid, nx, ny, deepcopy(path), peaks))
 
     return paths
 

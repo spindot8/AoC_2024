@@ -67,7 +67,7 @@ def solve_puzzle(filename, param=None, verbose=False):
 
 def main():
     input_data_list = [
-        ['sample.txt',  'sample data  ', True, False, None],
+        ['sample.txt',  'sample data  ', False, False, None],
         ['data.txt',    'real data    ', True,  False, None],
     ]
 
