@@ -17,12 +17,7 @@ def nums(line):
 def solve_puzzle(filename, param=None, verbose=False):
     lines = [line.strip('\n') for line in open(filename, 'r').readlines()]
 
-    inp = nums(lines[0])
-
-    stones = defaultdict(int)
-    for stone in inp:
-        stones[stone] += 1
-
+    stones = Counter(nums(lines[0]))
     for loop in range(75):
         if loop == 25:
             p1 = count_stones(stones)
@@ -32,10 +27,7 @@ def solve_puzzle(filename, param=None, verbose=False):
             if stone == 0:
                 new_stones[1] += n
             elif len(str(stone)) % 2 == 0:
-                str_stone = str(stone)
-                half_len = len(str_stone) // 2
-                left = int(str_stone[:half_len])
-                right = int(str_stone[half_len:])
+                left, right = cut_stone(stone)
                 new_stones[left] += n
                 new_stones[right] += n
             else:
@@ -47,11 +39,16 @@ def solve_puzzle(filename, param=None, verbose=False):
     return p1, p2
 
 
+def cut_stone(stone):
+    str_stone = str(stone)
+    half_len = len(str_stone) // 2
+    left = int(str_stone[:half_len])
+    right = int(str_stone[half_len:])
+    return left, right
+
+
 def count_stones(stones):
-    ans = 0
-    for stone, n in stones.items():
-        ans += n
-    return ans
+    return sum([n for n in stones.values()])
 
 
 def main():
