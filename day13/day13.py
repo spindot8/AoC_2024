@@ -1,13 +1,6 @@
-import sys
 import re
 import time
-import sympy
 import pyperclip
-from functools import lru_cache
-
-
-# needed for first solution for part 1
-sys.setrecursionlimit(1000000)
 
 
 # print the supplied value and paste it to the clipboard
@@ -35,18 +28,12 @@ def solve_puzzle(filename, param=None, verbose=False):
         games.append(tuple(game))
 
     for idx, game in enumerate(games):
-        # slower recursive solution for part 1 used initially
-        # ans = play_game(game, 0, 0, 0)
-        # solution with sympy used initially for part 2
-        # ans = play_game_linear_alg(game)
         ans = play_game_math(game)
         if ans is not None:
             p1 += ans
 
         (ax, ay), (bx, by), (px, py) = game
         new_game = ((ax, ay), (bx, by), (10000000000000 + px, 10000000000000 + py))
-        # solution with sympy used initially for part 2
-        # ans = play_game_linear_alg(new_game)
         ans = play_game_math(new_game)
         if ans is not None:
             p2 += ans
@@ -58,7 +45,10 @@ def play_game_math(game):
     ans = None
     (ax, ay), (bx, by), (px, py) = game
     # print('x *', ax, '+ y * ', bx, '=', px, 'and', 'x *', ay, '+ y * ', by, '=', py)
-    y = ((py * ax) - (ay * px)) / ((by * ax) - (bx * ay))
+
+    # first equation resolved to x put into second equation and resolved to y
+    y = ((py * ax) - (px * ay)) / ((by * ax) - (bx * ay))
+    # result of y put into first equation resolved to x
     x = (px - y * bx) / ax
 
     ans_a, ans_b = int(x), int(y)
@@ -68,49 +58,6 @@ def play_game_math(game):
     if ans_x == px and ans_y == py:
         ans = ans_a * 3 + ans_b * 1
         # print(x, y, ans_a, ans_b, ans_x, ans_y, px, py, ans)
-    return ans
-
-
-def play_game_linear_alg(game):
-    ans = None
-    (ax, ay), (bx, by), (px, py) = game
-    # print('x *', ax, '+ y * ', bx, '=', px, 'and', 'x *', ay, '+ y * ', by, '=', py)
-
-    x, y = sympy.symbols(['x', 'y'])
-    result = sympy.solve([x * ax + y * bx - px, x * ay + y * by - py])
-    ans_a, ans_b = [int(v) for v in result.values()]
-    ans_x = ans_a * ax + ans_b * bx
-    ans_y = ans_a * ay + ans_b * by
-
-    if ans_x == px and ans_y == py:
-        ans = ans_a * 3 + ans_b * 1
-        # print(result, ans_a, ans_b, ans_x, ans_y, px, py, ans)
-    return ans
-
-
-@lru_cache(maxsize=None)
-def play_game(game, cxv, cyv, cc):
-    (ax, ay), (bx, by), (px, py) = game
-
-    if px == cxv and py == cyv:
-        return cc
-    if cxv > px or cyv > py:
-        return None
-
-    ncxva = cxv + ax
-    ncyva = cyv + ay
-    ans1, ans2 = None, None
-    if ncxva <= px and ncyva <= py:
-        ans = play_game(game, ncxva, ncyva, cc + 3)
-
-    ncxvb = cxv + bx
-    ncyvb = cyv + by
-    if ncxvb <= px and ncyvb <= py:
-        ans2 = play_game(game, ncxvb, ncyvb, cc + 1)
-
-    if ans2 is not None:
-        if ans is None or ans > ans2:
-            ans = ans2
     return ans
 
 
