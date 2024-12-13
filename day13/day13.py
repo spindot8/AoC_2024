@@ -35,19 +35,40 @@ def solve_puzzle(filename, param=None, verbose=False):
         games.append(tuple(game))
 
     for idx, game in enumerate(games):
-        # slower solution for part 1 used initially
+        # slower recursive solution for part 1 used initially
         # ans = play_game(game, 0, 0, 0)
-        ans = play_game_linear_alg(game)
+        # solution with sympy used initially for part 2
+        # ans = play_game_linear_alg(game)
+        ans = play_game_math(game)
         if ans is not None:
             p1 += ans
 
         (ax, ay), (bx, by), (px, py) = game
         new_game = ((ax, ay), (bx, by), (10000000000000 + px, 10000000000000 + py))
-        ans = play_game_linear_alg(new_game)
+        # solution with sympy used initially for part 2
+        # ans = play_game_linear_alg(new_game)
+        ans = play_game_math(new_game)
         if ans is not None:
             p2 += ans
 
     return p1, p2
+
+
+def play_game_math(game):
+    ans = None
+    (ax, ay), (bx, by), (px, py) = game
+    # print('x *', ax, '+ y * ', bx, '=', px, 'and', 'x *', ay, '+ y * ', by, '=', py)
+    y = ((py * ax) - (ay * px)) / ((by * ax) - (bx * ay))
+    x = (px - y * bx) / ax
+
+    ans_a, ans_b = int(x), int(y)
+    ans_x = ans_a * ax + ans_b * bx
+    ans_y = ans_a * ay + ans_b * by
+
+    if ans_x == px and ans_y == py:
+        ans = ans_a * 3 + ans_b * 1
+        # print(x, y, ans_a, ans_b, ans_x, ans_y, px, py, ans)
+    return ans
 
 
 def play_game_linear_alg(game):
