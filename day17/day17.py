@@ -1,6 +1,7 @@
 import re
 import time
 import pyperclip
+from collections import *
 
 
 # print the supplied value and paste it to the clipboard
@@ -71,22 +72,49 @@ def run_prog(instr, a, b=0, c=0):
     return output
 
 
-def run_my_prog(a):
+def run_optimized_prog(a, b_xor=[1, 5]):
     output = []
-    while a > 0:
-        a_mod_8_xor_1 = ((a % 8) ^ 1)
-        out = ((a_mod_8_xor_1 ^ 5) ^ (a // (2 ** a_mod_8_xor_1))) % 8
+    while True:
+        a_mod_8_xor_1 = ((a % 8) ^ b_xor[0])
+        out = ((a_mod_8_xor_1 ^ b_xor[1]) ^ (a // (2 ** a_mod_8_xor_1))) % 8
         a //= 8
         output.append(out)
+        if a <= 0:
+            break
     return output
+
+
+def check_program(instr):
+    b_xor = []
+    cmd_operand_map = defaultdict(list)
+    for idx in range(0, len(instr), 2):
+        cmd = instr[idx]
+        operand = instr[idx + 1]
+        cmd_operand_map[cmd].append(operand)
+        if cmd == 1:
+            b_xor.append(operand)
+
+    assert cmd_operand_map[2][0] == 4  # b = a % 8
+    assert cmd_operand_map[0][0] == 3  # a //= 8
+    assert cmd_operand_map[7][0] == 5  # c = a // (2**b)
+    assert len(cmd_operand_map[1]) == 2     # b ^= something
+    assert len(cmd_operand_map[4]) == 1     # b ^= c, operand ignored
+    assert cmd_operand_map[5][0] == 5  # output = b % 8
+    assert cmd_operand_map[3][0] == 0  # jnz reg a 0
+
+    return cmd_operand_map, b_xor
+
 
 
 def solve_puzzle(filename, param=None, verbose=False):
     a, _, _, instr = load_program(filename)
 
+    # just to ensure that every possible input fulfills the assumptions
+    _, b_xor = check_program(instr)
+
     output = run_prog(instr, a)
-    # output_2 = run_my_prog(a)
-    # assert output == output_2, (output, output_2)
+    output_2 = run_optimized_prog(a, b_xor)
+    assert output == output_2, (output, output_2)
     p1 = ','.join([str(n) for n in output])
 
     # this seems to be valid for every input data, it assumes that instruction 0 with operand 3 occurs
@@ -102,7 +130,8 @@ def solve_puzzle(filename, param=None, verbose=False):
         add_a = 0
         while True:
             a = current_a + add_a
-            output = run_prog(instr, a)
+            # output = run_prog(instr, a)
+            output = run_optimized_prog(a, b_xor)
             rev_out = list(output)
             rev_out.reverse()
             if rev_out == target[:len(output)]:
