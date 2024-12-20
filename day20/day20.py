@@ -1,7 +1,6 @@
 import time
 from collections import *
 import pyperclip
-import heapq
 
 
 #       NORTH    EAST    SOUTH   WEST
@@ -15,104 +14,67 @@ def printc(value):
     pyperclip.copy(value)
 
 
-# Determine all shortest distances within the grid from start position
-# until either target position is reached or all reachable grid elements
-# are processed. Grid elements which are walls ('#' by default) are not
-# considered as being reachable.
-# The result is a path grid (dict) which contains for every position from
-# the original grid (or just until the target position was processed) the
-# shortest distance to the start_pos and the x and y coordinate of each
-# predecessor within the grid.
-def determine_grid_path(start_pos, grid, target=None, wall='#'):
+def determine_simple_path(sx, sy, simple_grid: set):
     grid_path = {}
-
-    cx, cy = start_pos
     visited = set()
-    to_visit = []
-    heapq.heappush(to_visit, (0, cx, cy, cx, cy))
-    while len(to_visit) > 0:
-        dist, cx, cy, px, py = heapq.heappop(to_visit)
+    q = deque([(0, sx, sy)])
+    while q:
+        dist, cx, cy = q.popleft()
         pos = (cx, cy)
-        if pos in visited:
-            continue
-        visited.add(pos)
-        grid_path[pos] = (dist, px, py)
-        if target and pos == target:
-            break
-        for dx, dy in dxy:
-            nx, ny = cx + dx, cy + dy
-            next_grid_entry = grid.get((nx, ny))
-            if next_grid_entry is not None and next_grid_entry != wall and (nx, ny) not in visited:
-                heapq.heappush(to_visit, (dist + 1, nx, ny, cx, cy))
+        if pos not in visited:
+            visited.add(pos)
+            grid_path[pos] = dist
+            for dx, dy in dxy:
+                nx, ny = cx + dx, cy + dy
+                if (nx, ny) in simple_grid and (nx, ny) not in visited:
+                    q.append((dist + 1, nx, ny))
     return grid_path
 
 
-def determine_cheats(start_pos, grid, normal_dist, dist_threshold, max_cheat_time, normal_distances, wall='#'):
-    ans = set()
+def determine_cheating_ends(simple_grid, pos, cheat_time):
+    cheating_ends = set()
+    for dist in range(1, cheat_time + 1):
+        for dx in range(dist + 1):
+            dy = dist - dx
+            for mx, my in [(1, 1), (1, -1), (-1, 1), (-1, -1)]:
+                nx, ny = pos[0] + (dx * mx), pos[1] + (dy * my)
+                if (nx, ny) in simple_grid:
+                    cheating_ends.add((nx, ny))
+    return cheating_ends
 
-    sx, sy = start_pos
-    visited = set()
-    to_visit = deque()
-    to_visit.append((0, sx, sy, None, None))
-    while len(to_visit) > 0:
-        dist, cx, cy, cheat_start_pos, cheat_time = to_visit.popleft()
 
-        if dist > normal_dist - dist_threshold:
-            continue
-
-        key = (cx, cy, cheat_start_pos, cheat_time)
-        if key in visited:
-            continue
-        visited.add(key)
-
-        # start cheating whenever possible
-        if cheat_start_pos is None:
-            to_visit.append((dist, cx, cy, (cx, cy), max_cheat_time))
-        else:
-            # end cheating whenever possible (not in a wall), it can be shorter than max_cheat_time
-            if grid[(cx, cy)] != wall:
-                assert cheat_time is not None and cheat_time >= 0
-                current_normal_dist = normal_distances[(cx, cy)]
-                if dist <= current_normal_dist - dist_threshold:
-                    ans.add((cheat_start_pos, (cx, cy)))
-                    # print(dist, cheat_start_pos, (cx, cy), len(ans))
-
-        for dx, dy in dxy:
-            nx, ny = cx + dx, cy + dy
-            next_grid_entry = grid.get((nx, ny))
-
-            if next_grid_entry is not None:
-                if cheat_start_pos is not None and cheat_time is not None:
-                    if cheat_time > 0:
-                        to_visit.append((dist + 1, nx, ny, cheat_start_pos, cheat_time - 1))
-                else:
-                    if next_grid_entry != wall:
-                        to_visit.append((dist + 1, nx, ny, cheat_start_pos, cheat_time))
-
-    return len(ans)
+def determine_cheats(simple_grid: set, cheat_time, normal_target_distance, distance_threshold, distances):
+    ans = 0
+    for start_pos in simple_grid:
+        cheating_ends = determine_cheating_ends(simple_grid, start_pos, cheat_time)
+        for end_pos in cheating_ends:
+            cheating_distance = abs(end_pos[0] - start_pos[0]) + abs(end_pos[1] - start_pos[1])
+            assert cheating_distance <= cheat_time
+            dist = distances[start_pos] + cheating_distance + (normal_target_distance - distances[end_pos])
+            if dist <= normal_target_distance - distance_threshold:
+                ans += 1
+    return ans
 
 
 def solve_puzzle(filename, param=None, verbose=False):
     lines = [line.strip('\n') for line in open(filename, 'r').readlines()]
 
-    grid = {}
+    simple_grid = set()
     for y, line in enumerate(lines):
         for x, ch in enumerate(line):
             if ch == 'S':
                 sx, sy = x, y
             if ch == 'E':
                 tx, ty = x, y
-            grid[(x, y)] = ch
+            if ch != '#':
+                simple_grid.add((x, y))
 
-    path = determine_grid_path((sx, sy), grid)
-    normal_distances = {}
-    for pos, (dist, px, py) in path.items():
-        normal_distances[pos] = dist
-    normal_distance = normal_distances[(tx, ty)]
+    distances = determine_simple_path(sx, sy, simple_grid)
+    normal_target_distance = distances[(tx, ty)]
 
     threshold_p1, threshold_p2 = param
-    p1 = determine_cheats((sx, sy), grid, normal_distance, threshold_p1, 2, normal_distances)
-    p2 = determine_cheats((sx, sy), grid, normal_distance, threshold_p2, 20, normal_distances)
+    p1 = determine_cheats(simple_grid, 2, normal_target_distance, threshold_p1, distances)
+    p2 = determine_cheats(simple_grid, 20, normal_target_distance, threshold_p2, distances)
 
     return p1, p2
 
@@ -120,7 +82,6 @@ def solve_puzzle(filename, param=None, verbose=False):
 def main():
     input_data_list = [
         ['sample.txt',  'sample data  ', False, False, (1, 50)],
-        # takes about 50 seconds
         ['data.txt',    'real data    ', True,  False, (100, 100)],
     ]
 
