@@ -36,53 +36,6 @@ robo_pad = {             '^': (1, 0), 'A': (2, 0),
             '<': (0, 1), 'v': (1, 1), '>': (2, 1)}
 
 
-def solve_puzzle_1(filename, param=None, verbose=False):
-    lines = [line.strip('\n') for line in open(filename, 'r').readlines()]
-
-    codes = []
-    p1, p2 = 0, 0
-
-    inp = []
-    for y, line in enumerate(lines):
-        inp.append(line)
-
-    mx, my = (2, 3)
-    r1x, r1y = (2, 0)
-    r2x, r2y = (2, 0)
-    for code in inp:
-        possibilities, mx, my = move_pad(num_pad, code, mx, my)
-
-        min_len = min([len(possi) for possi in possibilities])
-        second_possibilities = []
-        for possi in possibilities:
-            if len(possi) > min_len:
-                continue
-            add_2nd_possiblities, r1x, r1y = move_pad(robo_pad, possi, r1x, r1y)
-            second_possibilities.extend(add_2nd_possiblities)
-
-        min_len = min([len(possi2) for possi2 in second_possibilities])
-        third_possibilities = []
-        for possi2 in second_possibilities:
-            if len(possi2) > min_len:
-                continue
-            add_3nd_possiblities, r2x, r2y = move_pad(robo_pad, possi2, r2x, r2y)
-            third_possibilities.extend(add_3nd_possiblities)
-
-        best_code = third_possibilities[0]
-        for new_code in third_possibilities[1:]:
-            if len(new_code) < len(best_code):
-                best_code = new_code
-        codes.append(best_code)
-
-    for idx, code in enumerate(codes):
-        inpt = int(inp[idx][:-1])
-        ans = len(code) * inpt
-        print(len(code), inpt, ans, inp[idx], inp[idx][:-1], ''.join(code))
-        p1 += ans
-
-    return p1, p2
-
-
 def solve_puzzle(filename, param=None, verbose=False):
     lines = [line.strip('\n') for line in open(filename, 'r').readlines()]
 
@@ -92,9 +45,9 @@ def solve_puzzle(filename, param=None, verbose=False):
     for y, line in enumerate(lines):
         inp.append(line)
 
-    optimal_moves_num_pad = calc_optimal_moves(num_pad)
-    optimal_moves_robo_pad = calc_optimal_moves(robo_pad)
-    optimal_length_moves_robo_pad = {k: len(v[0]) for k, v in optimal_moves_robo_pad.items()}
+    moves_num_pad = calc_pad_moves(num_pad)
+    moves_robo_pad = calc_pad_moves(robo_pad)
+    length_moves_robo_pad = {k: len(v[0]) for k, v in moves_robo_pad.items()}
     cache = {}
 
     def calc_length(code, loop):
@@ -105,15 +58,15 @@ def solve_puzzle(filename, param=None, verbose=False):
         if loop == 1:
             prev_digit = 'A'
             for digit in code:
-                min_length += optimal_length_moves_robo_pad[(prev_digit, digit)]
+                min_length += length_moves_robo_pad[(prev_digit, digit)]
                 prev_digit = digit
         else:
             prev_digit = 'A'
             for digit in code:
                 length_list = []
-                if (prev_digit, digit) not in optimal_moves_robo_pad:
+                if (prev_digit, digit) not in moves_robo_pad:
                     print(code, loop, prev_digit, digit)
-                for next_code in optimal_moves_robo_pad[(prev_digit, digit)]:
+                for next_code in moves_robo_pad[(prev_digit, digit)]:
                     length_list.append(calc_length(next_code, loop - 1))
                 prev_digit = digit
                 min_length += min(length_list)
@@ -130,7 +83,7 @@ def solve_puzzle(filename, param=None, verbose=False):
 
     for code in inp:
         num = int(code[:-1])
-        num_pad_moves = calc_moves(code, optimal_moves_num_pad)
+        num_pad_moves = calc_moves(code, moves_num_pad)
         min_len_p1 = calc_min_length(num_pad_moves, 2)
         p1 += min_len_p1 * num
         min_len_p2 = calc_min_length(num_pad_moves, 25)
@@ -151,7 +104,7 @@ def calc_moves(code, optimal_moves_pad):
     return moves
 
 
-def calc_optimal_moves(pad):
+def calc_pad_moves(pad):
     optimal_moves = {}
     for d1, p1 in pad.items():
         for d2, p2 in pad.items():
@@ -162,24 +115,9 @@ def calc_optimal_moves(pad):
                 tx, ty = p2
                 dx, dy = tx - cx, ty - cy
                 possibilities = move_pad_once(pad, cx, cy, dx, dy, [[]])
-                min_len = min([len(possibility) for possibility in possibilities])
-                filtered_possibilities = [''.join(possibility) for possibility in possibilities if len(possibility) == min_len]
-                if len(filtered_possibilities) < len(possibilities):
-                    print(d1, d2, len(possibilities), len(filtered_possibilities))
-                optimal_moves[(d1, d2)] = filtered_possibilities
+                possibilities = [''.join(possibility) for possibility in possibilities]
+                optimal_moves[(d1, d2)] = possibilities
     return optimal_moves
-
-
-def move_pad(pad, code, cx, cy):
-    possibilities = [[]]
-    for digit in code:
-        tx, ty = pad[digit]
-        dx, dy = tx - cx, ty - cy
-        extended_possibilities = move_pad_once(pad, cx, cy, dx, dy, possibilities)
-        cx, cy = tx, ty
-        min_len = min([len(ext_possi) for ext_possi in extended_possibilities])
-        possibilities = [ext_possi for ext_possi in extended_possibilities if len(ext_possi) == min_len]
-    return possibilities, cx, cy
 
 
 def move_pad_once(pad, cx, cy, dx, dy, possibilities):
